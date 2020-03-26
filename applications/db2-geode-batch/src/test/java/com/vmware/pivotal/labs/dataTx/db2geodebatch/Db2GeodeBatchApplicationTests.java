@@ -1,16 +1,11 @@
 package com.vmware.pivotal.labs.dataTx.db2geodebatch;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import com.vmware.pivotal.labs.dataTx.db2geodebatch.domain.Account;
 import com.vmware.pivotal.labs.dataTx.db2geodebatch.mapper.AccountRowMapper;
-import nyla.solutions.core.io.IO;
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Region;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.runner.RunWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.test.JobLauncherTestUtils;
@@ -19,10 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.sql.DataSource;
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @SpringBatchTest
@@ -35,11 +32,6 @@ class Db2GeodeBatchApplicationTests {
 	void contextLoads() {
 	}
 
-	@Nested
-	public class Given_service
-	{
-
-	}
 
 	@Autowired
 	private JobLauncherTestUtils jobLauncherTestUtils;
@@ -53,7 +45,7 @@ class Db2GeodeBatchApplicationTests {
 
 	@Test
 	public void testJob() throws Exception {
-		jdbcTemplate.update(IO.readFile("src/test/resources/schema.sql"));
+		//jdbcTemplate.update(IO.readFile("src/test/resources/schema.sql"));
 		jdbcTemplate.update("CREATE TABLE ACCOUNT (\n" +
 				"  "+ AccountRowMapper.ACCOUNT_NBR_NM +" VARCHAR ,\n" +
 				"    "+AccountRowMapper.LOC_ADDR1+" VARCHAR,\n" +
@@ -72,8 +64,8 @@ class Db2GeodeBatchApplicationTests {
 
 		JobExecution jobExecution = jobLauncherTestUtils.launchJob();
 
-		Region<String, Account> region = CacheFactory.getAnyInstance().getRegion("ACCOUNT");
-		Set<String> keys = region.keySet();
+		Region<String, Account> region = CacheFactory.getAnyInstance().getRegion("test");
+		Set<String> keys = region.keySetOnServer();
 		System.out.println("keys:"+keys);
 
 		assertTrue(!keys.isEmpty());

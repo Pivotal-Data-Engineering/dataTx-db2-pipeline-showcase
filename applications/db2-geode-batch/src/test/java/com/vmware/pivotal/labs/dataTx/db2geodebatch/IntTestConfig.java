@@ -16,11 +16,11 @@ import javax.sql.DataSource;
 @EnableBatchProcessing
 public class IntTestConfig
 {
-    @Bean
-    public Cache cache()
-    {
-        return new CacheFactory().create();
-    }
+    //@Bean
+    //public Cache cache()
+    //{
+    //    return new CacheFactory().create();
+    //}
 
     @Bean
     public DataSource getDataSource() {
@@ -32,10 +32,12 @@ public class IntTestConfig
         return dataSourceBuilder.build();
     }
 
-    @Bean
+   /* @Bean
     public Region<String, Account> region(Cache cache)
     {
         RegionFactory<String,Account> rf = cache.createRegionFactory(RegionShortcut.LOCAL);
-        return rf.create("ACCOUNT");
+        return rf.create("test");
     }
+    */
+
 }

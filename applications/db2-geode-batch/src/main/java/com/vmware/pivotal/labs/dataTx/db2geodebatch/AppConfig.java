@@ -6,23 +6,23 @@ import io.pivotal.services.dataTx.spring.batch.geode.GeodeListPutAllWriter;
 import org.apache.geode.cache.DataPolicy;
 import org.apache.geode.cache.GemFireCache;
 import org.apache.geode.cache.Region;
+import org.apache.geode.pdx.ReflectionBasedAutoSerializer;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
-import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.*;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
+import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.data.gemfire.client.ClientRegionFactoryBean;
-import org.springframework.data.gemfire.config.annotation.ClientCacheApplication;
-import org.springframework.data.gemfire.config.annotation.EnableLogging;
-import org.springframework.data.gemfire.config.annotation.EnableSecurity;
-import org.springframework.data.gemfire.config.annotation.EnableStatistics;
+import org.springframework.data.gemfire.config.annotation.*;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
@@ -37,6 +37,7 @@ import java.util.function.Function;
 @EnableSecurity
 @EnableStatistics
 @EnableLogging
+@EnablePdx(serializerBeanName = "compositePdxSerializer")
 public class AppConfig
 {
     @Autowired
@@ -45,12 +46,18 @@ public class AppConfig
     @Autowired
     public StepBuilderFactory stepBuilderFactory;
 
+    @Bean
+    public ReflectionBasedAutoSerializer pdxSerializer()
+    {
+        return new ReflectionBasedAutoSerializer(".*");
+    }
     @Bean("test")
-    public ClientRegionFactoryBean<?, ?> testRegion(GemFireCache gemfireCache)
+    public ClientRegionFactoryBean<String, Account> testRegion(GemFireCache gemfireCache)
     {
 
         ClientRegionFactoryBean testRegion = new ClientRegionFactoryBean<String, String>();
         testRegion.setCache(gemfireCache);
+        testRegion.setRegionName("test");
         testRegion.setDataPolicy(DataPolicy.EMPTY);
         return testRegion;
     }//------------------------------------------------
@@ -61,6 +68,17 @@ public class AppConfig
         return new AccountRowMapper();
     }//-------------------------------------------
 
+    @Bean
+    public BatchConfigurer batchConfigurer() {
+        return new DefaultBatchConfigurer() {
+            @Override
+            protected JobRepository createJobRepository() throws Exception {
+                MapJobRepositoryFactoryBean factory = new MapJobRepositoryFactoryBean();
+                factory.setTransactionManager(new ResourcelessTransactionManager());
+                return factory.getObject();
+            }
+        };
+    }
     @Bean
     public JdbcCursorItemReader reader(RowMapper<Account> rowMapper,
                                        DataSource dataSource,
@@ -74,12 +92,12 @@ public class AppConfig
     }
 
     @Bean
-    public ItemWriter<Account> writer(Region<String, Account> region)
+    public ItemWriter<Account> writer(@Qualifier("test") Region<String, Account> test)
     {
 
         Function<Account, String> function = (Account account) -> account.getAccountNumber();
 
-        return new GeodeListPutAllWriter<Account>(region, function);
+        return new GeodeListPutAllWriter<Account>(test, function);
     }
 
     @Bean
