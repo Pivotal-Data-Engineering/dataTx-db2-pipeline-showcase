@@ -18,9 +18,9 @@ import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.data.gemfire.client.ClientRegionFactoryBean;
 import org.springframework.data.gemfire.config.annotation.*;
 import org.springframework.jdbc.core.RowMapper;
@@ -46,11 +46,18 @@ public class AppConfig
     @Autowired
     public StepBuilderFactory stepBuilderFactory;
 
+    @Value("${fetchSize:0}")
+    private int fetchSize;
+
+    @Value("${sql}")
+    private String sql;
+
     @Bean
     public ReflectionBasedAutoSerializer pdxSerializer()
     {
         return new ReflectionBasedAutoSerializer(".*");
     }
+
     @Bean("test")
     public ClientRegionFactoryBean<String, Account> testRegion(GemFireCache gemfireCache)
     {
@@ -69,25 +76,30 @@ public class AppConfig
     }//-------------------------------------------
 
     @Bean
-    public BatchConfigurer batchConfigurer() {
-        return new DefaultBatchConfigurer() {
+    public BatchConfigurer batchConfigurer()
+    {
+        return new DefaultBatchConfigurer()
+        {
             @Override
-            protected JobRepository createJobRepository() throws Exception {
+            protected JobRepository createJobRepository()
+            throws Exception
+            {
                 MapJobRepositoryFactoryBean factory = new MapJobRepositoryFactoryBean();
                 factory.setTransactionManager(new ResourcelessTransactionManager());
                 return factory.getObject();
             }
         };
     }
+
     @Bean
     public JdbcCursorItemReader reader(RowMapper<Account> rowMapper,
-                                       DataSource dataSource,
-                                       Environment env)
+                                       DataSource dataSource)
     {
         JdbcCursorItemReader reader = new JdbcCursorItemReader<>();
         reader.setRowMapper(rowMapper);
         reader.setDataSource(dataSource);
-        reader.setSql(env.getRequiredProperty("sql"));
+        reader.setSql(sql);
+        reader.setFetchSize(fetchSize);
         return reader;
     }
 
@@ -112,11 +124,11 @@ public class AppConfig
     }
 
     @Bean
-    public Step step1(ItemWriter<Account> writer, DataSource dataSource, Environment env)
+    public Step step1(ItemWriter<Account> writer, DataSource dataSource)
     {
         return stepBuilderFactory.get("step1")
                 .<Account, Account>chunk(10)
-                .reader(reader(rowMapper(), dataSource, env))
+                .reader(reader(rowMapper(), dataSource))
                 //.processor(processor())
                 .writer(writer)
                 .build();

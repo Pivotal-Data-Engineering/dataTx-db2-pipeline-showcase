@@ -1,7 +1,5 @@
 package com.vmware.pivotal.labs.dataTx.db2geodebatch;
 
-import com.vmware.pivotal.labs.dataTx.db2geodebatch.domain.Account;
-import org.apache.geode.cache.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -16,14 +14,10 @@ import javax.sql.DataSource;
 @EnableBatchProcessing
 public class IntTestConfig
 {
-    //@Bean
-    //public Cache cache()
-    //{
-    //    return new CacheFactory().create();
-    //}
 
     @Bean
-    public DataSource getDataSource() {
+    public DataSource getDataSource()
+    {
         DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
         dataSourceBuilder.username("SA");
         dataSourceBuilder.password("");
@@ -32,12 +26,5 @@ public class IntTestConfig
         return dataSourceBuilder.build();
     }
 
-   /* @Bean
-    public Region<String, Account> region(Cache cache)
-    {
-        RegionFactory<String,Account> rf = cache.createRegionFactory(RegionShortcut.LOCAL);
-        return rf.create("test");
-    }
-    */
 
 }

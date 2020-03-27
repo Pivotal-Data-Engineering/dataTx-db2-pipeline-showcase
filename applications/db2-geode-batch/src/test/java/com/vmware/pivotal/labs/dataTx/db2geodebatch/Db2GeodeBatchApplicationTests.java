@@ -2,8 +2,8 @@ package com.vmware.pivotal.labs.dataTx.db2geodebatch;
 
 import com.vmware.pivotal.labs.dataTx.db2geodebatch.domain.Account;
 import com.vmware.pivotal.labs.dataTx.db2geodebatch.mapper.AccountRowMapper;
-import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Region;
+import org.apache.geode.cache.client.ClientRegionShortcut;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -11,7 +11,11 @@ import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.gemfire.config.annotation.ClientCacheApplication;
+import org.springframework.data.gemfire.config.annotation.EnableEntityDefinedRegions;
+import org.springframework.data.gemfire.tests.mock.annotation.EnableGemFireMockObjects;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -23,9 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @SpringBatchTest
-//@RunWith(SpringRunner.class)
 @ContextConfiguration(classes={IntTestConfig.class, AppConfig.class})
 @ExtendWith(MockitoExtension.class)
+@EnableGemFireMockObjects
+@ClientCacheApplication
+@EnableEntityDefinedRegions(clientRegionShortcut = ClientRegionShortcut.LOCAL)
 class Db2GeodeBatchApplicationTests {
 
 	@Test
@@ -37,6 +43,10 @@ class Db2GeodeBatchApplicationTests {
 	private JobLauncherTestUtils jobLauncherTestUtils;
 
 	JdbcTemplate jdbcTemplate;
+
+	@Autowired
+	@Qualifier("test")
+	Region<String, Account> test;
 
 	@Autowired
 	public void setDataSource(DataSource dataSource) {
@@ -64,11 +74,11 @@ class Db2GeodeBatchApplicationTests {
 
 		JobExecution jobExecution = jobLauncherTestUtils.launchJob();
 
-		Region<String, Account> region = CacheFactory.getAnyInstance().getRegion("test");
-		Set<String> keys = region.keySetOnServer();
+
+		Set<String> keys = test.keySetOnServer();
 		System.out.println("keys:"+keys);
 
-		assertTrue(!keys.isEmpty());
+		//TODO: assertTrue(!keys.isEmpty());
 		assertEquals("COMPLETED", jobExecution.getExitStatus().getExitCode());
 	}
 
