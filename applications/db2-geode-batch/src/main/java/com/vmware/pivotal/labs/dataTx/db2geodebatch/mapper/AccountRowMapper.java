@@ -3,7 +3,6 @@ package com.vmware.pivotal.labs.dataTx.db2geodebatch.mapper;
 import com.vmware.pivotal.labs.dataTx.db2geodebatch.domain.Account;
 import com.vmware.pivotal.labs.dataTx.db2geodebatch.domain.Location;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
