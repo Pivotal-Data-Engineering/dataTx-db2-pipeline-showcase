@@ -53,6 +53,6 @@ export spring_datasource_password=<password>
 
 ```
 
+Running the application
 
-spring_jpa_hibernate_ddl-auto=update
-spring_jpa_generate-ddl=true
+    java -Dspring.profiles.active="runtime,default" -jar target/db2-geode-batch-0.0.1-SNAPSHOT.jar
