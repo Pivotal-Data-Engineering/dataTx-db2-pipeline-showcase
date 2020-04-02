@@ -20,12 +20,12 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest(classes = {IntTestConfig.class, AppConfig.class}
-        , properties = {"spring.main.allow-bean-definition-overriding=true"}
+//, properties = {"spring.main.allow-bean-definition-overriding=true"
+@SpringBootTest(classes = {EmbeddedGeodeConfig.class,BatchConfig.class,
+        EmbeddedH2Config.class}
 )
 @SpringBatchTest
-@ContextConfiguration(classes = {IntTestConfig.class, AppConfig.class})
-@ActiveProfiles({"default", "test"})
+@ActiveProfiles({"test","batch"})
 class Db2GeodeBatchApplicationTests
 {
 

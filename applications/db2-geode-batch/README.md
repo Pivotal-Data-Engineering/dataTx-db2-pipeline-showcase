@@ -40,7 +40,37 @@ values ('1','loc1','loc2');
 
 ## Running Embedded GemFire
 
-Set the following environment variables 
+The key to running GemFire cluster in embedded mode is to not mix client and server 
+Spring Data Geode configuration in the same profile.
+  
+In the following configuration, this client Geode configuration is only loaded when the 
+default Spring profile is used.
+  
+Integration and unit test can exclude the default profile with 
+a expected external Geode cluster in order to use and embedded version.
+   
+```java
+@Configuration
+@EnableBatchProcessing()
+@ClientCacheApplication
+@EnableSecurity
+@EnableStatistics
+@EnableLogging
+@EnablePdx
+@Profile("default")
+public class GeodeClientConfig
+{
+    //.....
+}
+   ```
+
+The **@ClientCacheApplication** annotation marks the application as a Geode client once the annotation is loaded.
+The **@Profile("default")** annotation will inform Spring to only load this configuration with the default
+profile.
+
+
+
+## Running the application
 
 ```shell script
 export spring_datasource_driverClassName=com.ibm.db2.jcc.DB2Driver
@@ -53,6 +83,4 @@ export spring_datasource_password=<password>
 
 ```
 
-Running the application
-
-    java -Dspring.profiles.active="runtime,default" -jar target/db2-geode-batch-0.0.1-SNAPSHOT.jar
+    java -jar target/db2-geode-batch-0.0.1-SNAPSHOT.jar
