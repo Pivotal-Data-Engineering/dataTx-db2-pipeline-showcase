@@ -40,6 +40,47 @@ values ('1','loc1','loc2');
 
 ## Running Embedded GemFire
 
+This class autowires an an embedded Apach Geode cluster when the
+ "test" profile is active. An CacheServer and Locator will be started in embedded mode.
+
+```java
+@Configuration
+@Profile("test")
+@PeerCacheApplication
+@EnableLocator
+@EnablePdx
+public class EmbeddedGeodeConfig
+{
+    @Bean
+    public ReflectionBasedAutoSerializer pdxSerializer()
+    {
+        return new ReflectionBasedAutoSerializer(".*");
+    }
+
+    @Bean("embedded")
+    CacheFactoryBean cache()
+    {
+        CacheFactoryBean bean = new CacheFactoryBean();
+        return bean;
+    }
+
+    @Bean("test")
+    PartitionedRegionFactoryBean region(GemFireCache gemfireCache)
+    {
+        PartitionedRegionFactoryBean<Long, Account> region =
+                new PartitionedRegionFactoryBean<>();
+
+        region.setCache(gemfireCache);
+        region.setClose(false);
+        region.setPersistent(false);
+
+        return region;
+    }
+}
+```
+
+
+
 The key to running GemFire cluster in embedded mode is to not mix client and server 
 Spring Data Geode configuration in the same profile.
   
