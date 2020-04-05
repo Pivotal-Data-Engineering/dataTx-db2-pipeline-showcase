@@ -1,0 +1,24 @@
+spring:
+  batch:
+    chunkSize: 10
+    throttleLimit: 1
+    select:
+      sql: select test1,test2,test3
+            from SOURCE_ACCOUNT
+    insert:
+      sql: insert into DEST_ACCOUNT(test1,test2,test3)
+            values (?,?,?)
+  datasource:
+    driverClassName: org.h2.Driver
+    url: jdbc:h2:./target/db/flyway_sample;INIT=RUNSCRIPT FROM 'classpath:db/migration/V1_0__dbmigration.sql'
+    username: sa
+    password: security
+  datasourcetarget:
+      driverClassName: org.h2.Driver
+      url: jdbc:h2:./target/db/flyway_sample;INIT=RUNSCRIPT FROM 'classpath:db/migration/V1_0__dbmigration.sql'
+      username: sa
+      password: security
+  jpa:
+    hibernate:
+      ddl-auto: update
+    generate-ddl: true

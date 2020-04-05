@@ -1,0 +1,15 @@
+spring:
+  batch:
+    chunkSize: 10
+    throttleLimit: 1
+    initialize-schema: ALWAYS
+  datasource:
+    initialization-mode: ALWAYS
+  data:
+    gemfire:
+      pool:
+        default:
+          locators: localhost[10334]
+
+
+sql: select * from ACCOUNT
