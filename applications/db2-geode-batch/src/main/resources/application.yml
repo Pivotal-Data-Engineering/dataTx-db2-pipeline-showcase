@@ -4,6 +4,10 @@ spring:
     initialize-schema: ALWAYS
   datasource:
     initialization-mode: ALWAYS
+  jpa:
+    generate-ddl: false
+    hibernate:
+      ddl-auto: none
   data:
     gemfire:
       pool:

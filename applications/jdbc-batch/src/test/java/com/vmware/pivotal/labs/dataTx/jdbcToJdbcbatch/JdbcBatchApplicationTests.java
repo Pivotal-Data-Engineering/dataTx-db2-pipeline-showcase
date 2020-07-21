@@ -8,7 +8,9 @@ import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -18,14 +20,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(classes = {BatchConfig.class,
         EmbeddedH2Config.class,
-        ResultSetMapRowMapper.class}
+        ResultSetMapRowMapper.class, JdbcBatchApplication.class}
 )
 @SpringBatchTest
 @ActiveProfiles({"test", "batch"})
+@EnableJpaRepositories
+
 class JdbcBatchApplicationTests
 {
+    JdbcTemplate sourceTemplate;
+    JdbcTemplate primaryTemplate;
+    @Autowired
+    private JobLauncherTestUtils jobLauncherTestUtils;
 
-    @Test
+    //@Test
     void contextLoads()
     {
     }
@@ -33,45 +41,30 @@ class JdbcBatchApplicationTests
     @BeforeEach
     public void setUp()
     {
-        /*
-        jdbcTemplate.update("CREATE TABLE SOURCE_ACCOUNT" +
-                " (\n" +
-                "  test1 VARCHAR ,\n" +
-                "  test2 VARCHAR ,\n" +
-                "    test3 VARCHAR\n" +
-                ");");
-
-
-        jdbcTemplate.update("CREATE TABLE DEST_ACCOUNT" +
-                " (\n" +
-                "  test1 VARCHAR ,\n" +
-                "  test2 VARCHAR ,\n" +
-                "    test3 VARCHAR\n" +
-                ");");
-
-         */
-
         this.tearDown();
     }
 
     @AfterEach
     void tearDown()
     {
-        jdbcTemplate.update("delete from SOURCE_ACCOUNT");
-        jdbcTemplate.update("delete from DEST_ACCOUNT");
+        sourceTemplate.update("delete from SOURCE_ACCOUNT");
+        primaryTemplate.update("delete from DEST_ACCOUNT");
     }
 
-    @Autowired
-    private JobLauncherTestUtils jobLauncherTestUtils;
 
-    JdbcTemplate jdbcTemplate;
+    @Autowired
+    public void setReaderDataSource(@Qualifier("source") DataSource dataSource)
+    {
+        this.sourceTemplate = new JdbcTemplate(dataSource);
+    }
 
 
     @Autowired
     public void setDataSource(DataSource dataSource)
     {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.primaryTemplate = new JdbcTemplate(dataSource);
     }
+
 
     @Test
     public void testJob()
@@ -80,7 +73,7 @@ class JdbcBatchApplicationTests
 
         for (int i = 1; i <= 10; i++)
         {
-            jdbcTemplate.update("insert into SOURCE_ACCOUNT( test1," +
+            sourceTemplate.update("insert into SOURCE_ACCOUNT( test1," +
                             " test2, test3" +
                             ") values (?,?,?)",
                     "account" + i, "location1-" + i, "location2-" + i);
@@ -95,7 +88,7 @@ class JdbcBatchApplicationTests
 
         assertEquals("COMPLETED", jobExecution.getExitStatus().getExitCode());
 
-        int count = jdbcTemplate.queryForObject("select count(*) from DEST_ACCOUNT", Integer.class);
+        int count = primaryTemplate.queryForObject("select count(*) from DEST_ACCOUNT", Integer.class);
         System.out.println("count:" + count);
 
         assertEquals(10, count);

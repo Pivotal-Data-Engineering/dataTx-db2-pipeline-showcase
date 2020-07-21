@@ -28,7 +28,7 @@ import java.util.function.Function;
  */
 @Configuration
 @EnableBatchProcessing
-public class BatchConfig
+public class BatchConfig extends DefaultBatchConfigurer
 {
     @Value("${fetchSize:0}")
     private int fetchSize;
@@ -91,6 +91,7 @@ public class BatchConfig
                 .writer(writer)
                 .build();
     }
+
 
     @Bean
     public BatchConfigurer batchConfigurer()

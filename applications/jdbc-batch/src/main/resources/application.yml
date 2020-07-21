@@ -1,15 +1,18 @@
 spring:
+  flyway:
+    enabled: false
+    baselineOnMigrate: false
   batch:
     chunkSize: 10
     throttleLimit: 1
-    initialize-schema: ALWAYS
+    initialize-schema: never
   datasource:
     initialization-mode: ALWAYS
-  data:
-    gemfire:
-      pool:
-        default:
-          locators: localhost[10334]
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: none
+
 
 
 sql: select * from ACCOUNT

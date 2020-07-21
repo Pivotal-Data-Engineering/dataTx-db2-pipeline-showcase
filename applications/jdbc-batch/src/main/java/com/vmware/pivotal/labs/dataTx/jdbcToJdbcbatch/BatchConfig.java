@@ -1,6 +1,8 @@
 package com.vmware.pivotal.labs.dataTx.jdbcToJdbcbatch;
 
 import com.vmware.pivotal.labs.dataTx.jdbcToJdbcbatch.mapper.ResultSetMapRowMapper;
+import com.vmware.pivotal.labs.dataTx.jdbcToJdbcbatch.processor.ExistingAccountFilter;
+import com.vmware.pivotal.labs.dataTx.jdbcToJdbcbatch.repository.AccountRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.*;
@@ -8,6 +10,7 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean;
 import org.springframework.batch.core.step.tasklet.TaskletStep;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
@@ -15,10 +18,12 @@ import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilde
 import org.springframework.batch.item.database.support.ColumnMapItemPreparedStatementSetter;
 import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 
@@ -46,48 +51,76 @@ public class BatchConfig
     @Value("${spring.batch.throttleLimit}")
     private int throttleLimit;
 
+    @Value("${spring.datasource-reader.driverClassName}")
+    private String readerDriverClassName;
 
-    @Value("${spring.datasourcetarget.driverClassName}")
+    @Value("${spring.datasource-reader.url}")
+    private String readerJdbcUrl;;
+
+    @Value("${spring.datasource-reader.username}")
+    private String readerUserName;
+
+    @Value("${spring.datasource-reader.password}")
+    private String readerPassword;
+
+    @Value("${spring.datasource.url}")
+    private String url;
+
+    @Value("${spring.datasource.driverClassName}")
     private String driverClassName;
-    @Value("${spring.datasourcetarget.url}")
-    private String jdbcUrl;;
 
-    @Value("${spring.datasourcetarget.username}")
-    private String userName;
+    @Value("${spring.datasource.username}")
+    private String username;
 
-    @Value("${spring.datasourcetarget.password}")
+    @Value("${spring.datasource.password}")
     String password;
 
-
-    DataSource systemOfRecordDataSource()
-
+    DataSource primaryDataSource()
     {
         return DataSourceBuilder.create()
+                .url(url)
                 .driverClassName(driverClassName)
-                .url(jdbcUrl)
-                .username(userName)
-                .password(password).build();
-    }
-    @Bean
-    public ItemWriter<Map<String, ?>> writer(@Value("${spring.batch.insert.sql}")
-                                              String sql,
-                                             DataSource dataSource)
-    {
-        return new JdbcBatchItemWriterBuilder()
-                .dataSource(dataSource)
-                .sql(sql)
-                .itemPreparedStatementSetter(new ColumnMapItemPreparedStatementSetter())
+                .username(username)
+                .password(password)
                 .build();
     }
 
+    DataSource readerDataSource()
+
+    {
+        return DataSourceBuilder.create()
+                .driverClassName(readerDriverClassName)
+                .url(readerJdbcUrl)
+                .username(readerUserName)
+                .password(readerPassword).build();
+    }
+
+    @Bean("itemProcessor")
+    public ItemProcessor<Map<String,?>,Map<String,?>> itemProcessor(AccountRepository accountRepository)
+    {
+        return new ExistingAccountFilter(accountRepository);
+    }//-------------------------------------------
     @Bean
-    public JdbcCursorItemReader reader(ResultSetMapRowMapper rowMapper,
+    public ItemWriter<Map<String, Object>> writer(@Value("${spring.batch.insert.sql}")
+                                              String sql)
+    {
+        ItemWriter<Map<String,Object>> writer= new JdbcBatchItemWriterBuilder()
+                .dataSource(primaryDataSource())
+                .sql(sql)
+                .itemPreparedStatementSetter(new ColumnMapItemPreparedStatementSetter())
+                .build();
+
+        return writer;
+    }
+
+    @Bean
+    public JdbcCursorItemReader<Map<String,?>> reader(ResultSetMapRowMapper rowMapper,
                                        @Value("${spring.batch.select.sql}")
                                                    String sql)
     {
         JdbcCursorItemReader reader = new JdbcCursorItemReader<>();
         reader.setRowMapper(rowMapper);
-        reader.setDataSource(systemOfRecordDataSource());
+        reader.setDataSource(readerDataSource());
         reader.setSql(sql);
         reader.setFetchSize(fetchSize);
         return reader;
@@ -98,7 +131,6 @@ public class BatchConfig
     {
         return jobBuilderFactory.get("importJob")
                 .incrementer(new RunIdIncrementer())
-                //.listener(listener)
                 .flow(step1)
                 .end()
                 .build();
@@ -111,12 +143,17 @@ public class BatchConfig
     }
 
     @Bean
-    public Step step1(ItemWriter<Map<String, ?>> writer, ItemReader<Map<String, ?>> itemReader, TaskExecutor taskExecutor)
+    public Step step1(ItemWriter<Map<String, ?>> writer,
+                      ItemReader<Map<String, ?>> itemReader,
+                      @Qualifier("itemProcessor")
+                      ItemProcessor<Map<String, ?>,Map<String, ?>> itemProfessor,
+                      TaskExecutor taskExecutor)
     {
         final TaskletStep step1;
         step1 = stepBuilderFactory.get("step1")
                 .<Map<String, ?>, Map<String, ?>>chunk(chunkSize)
                 .reader(itemReader)
+                .processor((ItemProcessor)itemProfessor)
                 .writer(writer)
                 .taskExecutor(taskExecutor)
                 .throttleLimit(throttleLimit)
@@ -139,4 +176,6 @@ public class BatchConfig
             }
         };
     }
+
+
 }

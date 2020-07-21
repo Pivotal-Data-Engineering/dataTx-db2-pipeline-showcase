@@ -1,0 +1,9 @@
+
+spring.cloud.stream.bindings.input.destination: account
+spring.cloud.stream.bindings.input.group: group1
+spring.cloud.stream.bindings.input.consumer.useNativeDecoding: false
+spring.cloud.stream.kafka.bindings.input.consumer.enableDlq: true
+spring.cloud.stream.kafka.bindings.input.consumer.dlqName: account.errorss
+spring.cloud.stream.kafka.streams.binder.configuration:
+  default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+  default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
