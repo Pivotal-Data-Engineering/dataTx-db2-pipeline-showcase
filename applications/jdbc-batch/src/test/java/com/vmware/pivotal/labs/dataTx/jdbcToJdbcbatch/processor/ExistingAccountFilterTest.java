@@ -10,11 +10,15 @@ import org.mockito.Mockito;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 class ExistingAccountFilterTest
 {
+    private ExistingAccountFilter subject;
+
+
     @Mock
     AccountRepository accountRepository;
 
@@ -22,20 +26,33 @@ class ExistingAccountFilterTest
     public void setUp()
     {
         initMocks(this);
+        subject = new ExistingAccountFilter(accountRepository);
     }
+
     @Test
     public void test_filter()
     throws Exception
     {
 
-        ExistingAccountFilter filter = new ExistingAccountFilter(accountRepository);
+
         Map<String, Long> map = new HashMap<>();
         Long id = Long.valueOf(1);
         map.put("id", id);
 
-        filter.process(map);
+        subject.process(map);
 
         Mockito.verify(accountRepository).findById(any());
+
+    }
+
+    @Test
+    public void test_filter_empty_returns_null()
+            throws Exception
+    {
+
+        assertNull(subject.process(new HashMap<>()));
+
+        assertNull(subject.process(null));
 
     }
 

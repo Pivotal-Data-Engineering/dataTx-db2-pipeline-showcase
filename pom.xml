@@ -11,6 +11,5 @@
     <modules>
         <module>applications/db2-geode-batch</module>
         <module>applications/jdbc-batch</module>
-        <module>applications/kaka-connect-jdbc-consumer-sink</module>
     </modules>
 </project>

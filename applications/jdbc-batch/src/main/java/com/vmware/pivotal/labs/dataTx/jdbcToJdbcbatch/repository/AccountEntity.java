@@ -15,7 +15,7 @@ import javax.persistence.Id;
 public class AccountEntity
 {
     @Id
-    private Long accountId;
+    private String accountId;
 
     private String name;
 }

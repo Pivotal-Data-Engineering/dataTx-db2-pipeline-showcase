@@ -231,11 +231,11 @@
                         <goals>
                             <goal>read-project-properties</goal>
                         </goals>
-                        <configuration>
-                            <files>
-                                <file>${basedir}/secret.properties</file>
-                            </files>
-                        </configuration>
+<!--                        <configuration>-->
+<!--                            <files>-->
+<!--                                <file>${basedir}/secret.properties</file>-->
+<!--                            </files>-->
+<!--                        </configuration>-->
                     </execution>
                 </executions>
             </plugin>

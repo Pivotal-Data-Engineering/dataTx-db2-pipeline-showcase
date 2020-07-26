@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 
 import javax.sql.DataSource;
 
@@ -26,7 +27,22 @@ public class EmbeddedH2Config
     @Value("${spring.datasource.password}")
     private String password;
 
-    @Bean
+    @Value("${spring.datasource-reader.url}")
+    private String sourceUrl;
+
+    @Bean("source")
+    @Order(2)
+    public DataSource getSourceDataSource()
+    {
+        DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
+        dataSourceBuilder.username(user);
+        dataSourceBuilder.password(password);
+        dataSourceBuilder.driverClassName("org.h2.Driver");
+        dataSourceBuilder.url(sourceUrl);
+        return dataSourceBuilder.build();
+    }
+
+    @Bean("default")
     @Primary
     public DataSource getDataSource()
     {

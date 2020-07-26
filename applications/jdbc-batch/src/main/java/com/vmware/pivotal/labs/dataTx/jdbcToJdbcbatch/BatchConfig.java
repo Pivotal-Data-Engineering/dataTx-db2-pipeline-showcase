@@ -3,6 +3,7 @@ package com.vmware.pivotal.labs.dataTx.jdbcToJdbcbatch;
 import com.vmware.pivotal.labs.dataTx.jdbcToJdbcbatch.mapper.ResultSetMapRowMapper;
 import com.vmware.pivotal.labs.dataTx.jdbcToJdbcbatch.processor.ExistingAccountFilter;
 import com.vmware.pivotal.labs.dataTx.jdbcToJdbcbatch.repository.AccountRepository;
+import nyla.solutions.core.exception.CommunicationException;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.*;
@@ -23,9 +24,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.retry.backoff.BackOffPolicy;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.policy.AlwaysRetryPolicy;
 
 import javax.sql.DataSource;
 import java.util.Map;
@@ -86,7 +89,6 @@ public class BatchConfig
     }
 
     DataSource readerDataSource()
-
     {
         return DataSourceBuilder.create()
                 .driverClassName(readerDriverClassName)
@@ -150,11 +152,31 @@ public class BatchConfig
                       TaskExecutor taskExecutor)
     {
         final TaskletStep step1;
+        BackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
         step1 = stepBuilderFactory.get("step1")
                 .<Map<String, ?>, Map<String, ?>>chunk(chunkSize)
+                .faultTolerant()
+                .retryLimit(10)
+                .retry(Throwable.class)
                 .reader(itemReader)
+                .faultTolerant()
+                .retryLimit(4)
+                .retry(CommunicationException.class)
+                .retry(Throwable.class)
+                .backOffPolicy(backOffPolicy)
                 .processor((ItemProcessor)itemProfessor)
+                .faultTolerant()
+                .retryLimit(4)
+                .retry(CommunicationException.class)
+                .backOffPolicy(backOffPolicy)
                 .writer(writer)
+                .faultTolerant()
+                .retryLimit(4)
+                .retry(CommunicationException.class)
+                .backOffPolicy(backOffPolicy)
+//                .skip(Exception.class)
+//                .skipLimit(1)
+          //      .retryPolicy(new AlwaysRetryPolicy())
                 .taskExecutor(taskExecutor)
                 .throttleLimit(throttleLimit)
                 .build();

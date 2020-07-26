@@ -10,13 +10,13 @@ spring:
             values (?,?,?)
   datasource-reader:
     driverClassName: org.h2.Driver
-    url: jdbc:h2:./target/db/reader_db
+    url: jdbc:h2:./runtime/db/reader_db;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE
     #;INIT=RUNSCRIPT FROM 'classpath:db/migration/V1_0__dbmigration.sql'
     username: sa
     password: security
   datasource:
       driverClassName: org.h2.Driver
-      url: jdbc:h2:./target/db/primary_db;
+      url: jdbc:h2:./runtime/db/primary_db;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE
       #INIT=RUNSCRIPT FROM 'classpath:db/migration/V1_0__dbmigration.sql'
       username: sa
       password: security
